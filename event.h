@@ -104,6 +104,9 @@ class Event {
   template <typename GenMean>
   void compute_reduced_thickness(GenMean gen_mean);
 
+  void compute_nuclear_deterministic_thickness(
+      const Nucleus& nucleus, const NucleonCommon& nucleon_common, Grid& TX);
+
   /// An instantation of compute_reduced_thickness<GenMean> with a bound
   /// argument for GenMean.  Created in the ctor.  Implemented this way to
   /// allow the compiler to fully inline the GenMean function and only require a
@@ -126,7 +129,7 @@ class Event {
   const double xymax_;
 
   /// Nuclear thickness grids TA, TB and reduced thickness grid TR.
-  Grid TA_, TB_, TR_;
+  Grid TA_, TB_, TR_, TA_det_, TB_det_;
 
   /// Center of mass coordinates in "units" of grid index (not fm).
   double ixcm_, iycm_;

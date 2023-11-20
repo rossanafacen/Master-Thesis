@@ -56,6 +56,8 @@ Event::Event(const VarMap& var_map)
       xymax_(.5*nsteps_*dxy_),
       TA_(boost::extents[nsteps_][nsteps_]),
       TB_(boost::extents[nsteps_][nsteps_]),
+      TA_det_(boost::extents[nsteps_][nsteps_]), 
+      TB_det_(boost::extents[nsteps_][nsteps_]),
       TR_(boost::extents[nsteps_][nsteps_]),
       TAB_(boost::extents[nsteps_][nsteps_]),
       EOS_() {
@@ -88,6 +90,8 @@ void Event::compute(const Nucleus& nucleusA, const Nucleus& nucleusB,
   compute_nuclear_thickness(nucleusA, nucleon_common, TA_);
   compute_nuclear_thickness(nucleusB, nucleon_common, TB_);
   compute_reduced_thickness_();
+  compute_nuclear_deterministic_thickness(nucleusA, nucleon_common, TA_det_);
+  compute_nuclear_deterministic_thickness(nucleusB, nucleon_common, TB_det_);
   compute_ncoll();
   compute_observables();
 }
@@ -146,6 +150,44 @@ void Event::compute_nuclear_thickness(
   }
 }
 
+void Event::compute_nuclear_deterministic_thickness(
+    const Nucleus& nucleus, const NucleonCommon& nucleon_common, Grid& TX) {
+  // Construct the thickness grid by looping over participants and adding each
+  // to a small subgrid within its radius.  Compared to the other possibility
+  // (grid cells as the outer loop and participants as the inner loop), this
+  // reduces the number of required distance-squared calculations by a factor of
+  // ~20 (depending on the nucleon size).  The Event unit test verifies that the
+  // two methods agree.
+  
+  // Wipe grid with zeros.
+  std::fill(TX.origin(), TX.origin() + TX.num_elements(), 0.); 
+
+  // Deposit each participant onto the grid. Loop over nucleons in the nucleus, and check if nucleons are participants
+  for (const auto& nucleon : nucleus) {
+
+    // Get nucleon subgrid boundary {xmin, xmax, ymin, ymax}. NucleonCommon is defined in nucleon.h, where its method boundary is defined
+    const auto boundary = nucleon_common.boundary(nucleon);
+
+    // Determine min & max indices of nucleon subgrid.
+    int ixmin = clip(static_cast<int>((boundary[0]+xymax_)/dxy_), 0, nsteps_-1); //ixmin will be boundary[0]+xymax_)/dxy_, or 0 if (boundary[0]+xymax_)/dxy_)< zero, or (nsteps-1) if (boundary[0]+xymax_)/dxy_) > (nsteps-1) 
+    int ixmax = clip(static_cast<int>((boundary[1]+xymax_)/dxy_), 0, nsteps_-1);
+    int iymin = clip(static_cast<int>((boundary[2]+xymax_)/dxy_), 0, nsteps_-1);
+    int iymax = clip(static_cast<int>((boundary[3]+xymax_)/dxy_), 0, nsteps_-1);
+
+    // Add profile to grid. 
+    for (auto iy = iymin; iy <= iymax; ++iy) {
+      for (auto ix = ixmin; ix <= ixmax; ++ix) {
+        TX[iy][ix] += nucleon_common.deterministic_thickness(
+          nucleon, (ix+.5)*dxy_ - xymax_, (iy+.5)*dxy_ - xymax_
+        );
+      }
+    }
+  }
+}
+
+
+
+
 template <typename GenMean>
 void Event::compute_reduced_thickness(GenMean gen_mean) {
   double sum = 0.;
@@ -169,12 +211,14 @@ void Event::compute_reduced_thickness(GenMean gen_mean) {
   iycm_ = iycm / sum;
 }
 
+
+
 //added by me
 void Event::compute_ncoll() {
   double sum = 0.;
   for (int iy = 0; iy < nsteps_; ++iy) {
     for (int ix = 0; ix < nsteps_; ++ix) {
-      auto t = norm_ * TA_[iy][ix] * TB_[iy][ix];
+      auto t = norm_ * TA_det_[iy][ix] * TB_det_[iy][ix];
       
       //auto t = norm_ * TA_det_[iy][ix];
 

@@ -92,6 +92,9 @@ class NucleonCommon {
   /// Nucleon thickness as a function of transverse position.
   double thickness(const NucleonData& nucleon, double x, double y) const;
 
+  /// Nucleon deterministic thickness as a function of transverse position.
+  double deterministic_thickness(const NucleonData& nucleon, double x, double y) const;
+
   /// Randomly determine if a pair of nucleons participates.
   bool participate(NucleonData& A, NucleonData& B) const;
 
@@ -233,6 +236,21 @@ inline double NucleonCommon::thickness(
 
   return prefactor_ * t;
 }
+
+
+inline double NucleonCommon::deterministic_thickness(
+    const NucleonData& nucleon, double x, double y) const {
+  auto t = 0.;
+  
+  for (const auto& constituent : nucleon.constituents_) {
+    auto distance_sq = sqr(x - constituent.x) + sqr(y - constituent.y);
+    if (distance_sq < constituent_radius_sq_)
+      t += fast_exp_(-.5*distance_sq/constituent_width_sq_); 
+  }
+
+  return prefactor_ * t; //this thickness doesn t have the fluctuation
+}
+
 
 inline bool NucleonCommon::participate(NucleonData& A, NucleonData& B) const {
   // If both nucleons are already participants, there's nothing to do.
