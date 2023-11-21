@@ -76,8 +76,8 @@ void write_text_file(const fs::path& output_dir, int width, int num,
   // fixed-width) so that trailing zeros are omitted.  This significantly
   // increases output speed and saves disk space since many grid elements are
   // zero.
-  //for (const auto& row : event.reduced_thickness_grid()) {
-  for (const auto& row : event.ncoll_grid()) {
+  for (const auto& row : event.reduced_thickness_grid()) {
+  //for (const auto& row : event.ncoll_grid()) {
     
     auto&& iter = row.begin();
     // Write all row elements except the last with a space delimiter afterwards.
@@ -110,9 +110,9 @@ class HDF5Writer {
 // Add a simple scalar attribute to an HDF5 dataset.
 template <typename T>
 void hdf5_add_scalar_attr(
-    const H5::DataSet& dataset, const std::string& name, const T& value) {
+    const H5::Group& group, const std::string& name, const T& value) {
   const auto& datatype = hdf5::type<T>();
-  auto attr = dataset.createAttribute(name, datatype, H5::DataSpace{});
+  auto attr = group.createAttribute(name, datatype, H5::DataSpace{});
   attr.write(datatype, &value);
 }
 
@@ -124,45 +124,64 @@ void HDF5Writer::operator()(int num, double impact_param,
      const Event& event) const {
   // Prepare arguments for new HDF5 dataset.
 
-  // The dataset name is a prefix plus the event number.
-  const std::string name{"event_" + std::to_string(num)};
 
   // Cache a reference to the event grid -- will need it several times.
   //const auto& grid = event.reduced_thickness_grid();
-  const auto& grid = event.ncoll_grid();
+  const auto& grid1 = event.reduced_thickness_grid();
+  const auto& grid2 = event.ncoll_grid(); //CHANGED BY ME
+  
+  // The dataset name is a prefix plus the event number.
+  const std::string gp_name{"/event_" + std::to_string(num)};
+  const std::string entr_name{gp_name + "/entropy_density"};
+  const std::string ncoll_name{gp_name + "/Ncoll_density"};
+
+  
+  auto dataset = H5::Group(file_.createGroup(gp_name));
+
+  hdf5_add_scalar_attr(dataset, "b", impact_param);
+  hdf5_add_scalar_attr(dataset, "npart", event.npart());
+  hdf5_add_scalar_attr(dataset, "ncoll", event.ncoll());
+  hdf5_add_scalar_attr(dataset, "mult", event.multiplicity());
+  for (const auto& ecc : event.eccentricity())
+    hdf5_add_scalar_attr(dataset, "e" + std::to_string(ecc.first), ecc.second);
+  
 
   // Define HDF5 datatype and dataspace to match the grid.
-  const auto& datatype = hdf5::type<Event::Grid::element>();
-  std::array<hsize_t, Event::Grid::dimensionality> shape;
-  std::copy(grid.shape(), grid.shape() + shape.size(), shape.begin());
-  auto dataspace = hdf5::make_dataspace(shape);
+  const auto& datatype1 = hdf5::type<Event::Grid::element>();
+  std::array<hsize_t, Event::Grid::dimensionality> shape1;
+  std::copy(grid1.shape(), grid1.shape() + shape1.size(), shape1.begin());
+  auto dataspace1 = hdf5::make_dataspace(shape1);
 
   // Set dataset storage properties.
-  H5::DSetCreatPropList proplist{};
+  H5::DSetCreatPropList proplist1{};
   // Set chunk size to the entire grid.  For typical grid sizes (~100x100), this
   // works out to ~80 KiB, which is pretty optimal.  Anyway, it makes logical
   // sense to chunk this way, since chunks must be read contiguously and there's
   // no reason to read a partial grid.
-  proplist.setChunk(shape.size(), shape.data());
+  proplist1.setChunk(shape1.size(), shape1.data());
   // Set gzip compression level.  4 is the default in h5py.
-  proplist.setDeflate(4);
+  proplist1.setDeflate(4);
+
 
   // Create the new dataset and write the grid.
-  auto dataset = file_.createDataSet(name, datatype, dataspace, proplist);
-  dataset.write(grid.data(), datatype);
+  auto dataset1 = file_.createDataSet(entr_name, datatype1, dataspace1, proplist1);
+  dataset1.write(grid1.data(), datatype1);
 
-  // Write event attributes.
-  hdf5_add_scalar_attr(dataset, "b", impact_param);
-  hdf5_add_scalar_attr(dataset, "npart", event.npart());
+  const auto& datatype2 = hdf5::type<Event::Grid::element>();
+  std::array<hsize_t, Event::Grid::dimensionality> shape2;
+  std::copy(grid2.shape(), grid2.shape() + shape2.size(), shape2.begin());
+  auto dataspace2 = hdf5::make_dataspace(shape2);
+  H5::DSetCreatPropList proplist2{};
+  proplist2.setChunk(shape2.size(), shape2.data());
+  proplist2.setDeflate(4);
 
-  // Write ncoll if calculated
-  //if (ncoll > 0) hdf5_add_scalar_attr(dataset, "ncoll", ncoll);
 
-  hdf5_add_scalar_attr(dataset, "mult", event.multiplicity());
-  for (const auto& ecc : event.eccentricity())
-    hdf5_add_scalar_attr(dataset, "e" + std::to_string(ecc.first), ecc.second);
+  // Create the new dataset and write the ncoll gid
+  auto dataset2 = file_.createDataSet(ncoll_name, datatype2, dataspace2, proplist2);
+  dataset2.write(grid2.data(), datatype2);
+  
+  
 }
-
 #endif  // TRENTO_HDF5
 
 }  // unnamed namespace

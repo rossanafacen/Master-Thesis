@@ -87,6 +87,10 @@ class Event {
   const Grid& ncoll_grid() const
   { return TAB_; }
 
+  void clear_TAB(void);
+  void accumulate_TAB(Nucleon& A, Nucleon& B, NucleonProfile& profile);
+
+
   const bool& with_ncoll() const
   { return with_ncoll_; }
 

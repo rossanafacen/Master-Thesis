@@ -119,7 +119,7 @@ double Collider::sample_collision() {
   // logical OR over all possible participant pairs.
   // Returns the sampled impact parameter b, and binary collision number ncoll.
   double b;
-  int ncoll = 0;
+  //int ncoll = 0;
   bool collision = false;
 
   do {
@@ -140,8 +140,13 @@ double Collider::sample_collision() {
       for (auto&& B : *nucleusB_) {
         auto new_collision = nucleon_common_.participate(A, B);
         if (with_ncoll_) {
-        
-          if (new_collision) event_.compute_ncoll();
+          if (new_collision && (!collision) ) event_.clear_TAB();
+          // WK: to calculate binary collision denstiy, each collision 
+          // contribute independently its Tpp. Therefore, if one pair collide, 
+          // it calls the event object to accumulate Tpp to the Ncoll density
+          // Ncoll density = Sum Tpp		
+          if (new_collision) event_.accumulate_TAB(A, B, nucleon_profile_);
+          //if (new_collision) event_.compute_ncoll();
         }
         
         

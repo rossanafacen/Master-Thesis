@@ -88,7 +88,6 @@ void Event::compute(const Nucleus& nucleusA, const Nucleus& nucleusB,
                     const NucleonCommon& nucleon_common) {
   // Reset npart; compute_nuclear_thickness() increments it.
   npart_ = 0;
-  ncoll_ = 0;
   compute_nuclear_thickness(nucleusA, nucleon_common, TA_);
   compute_nuclear_thickness(nucleusB, nucleon_common, TB_);
   compute_reduced_thickness_();
@@ -125,14 +124,14 @@ void Event::compute_nuclear_thickness(
   // Wipe grid with zeros.
   std::fill(TX.origin(), TX.origin() + TX.num_elements(), 0.);
 
-  // Deposit each participant onto the grid.
+  // Deposit each participant onto the grid. Loop over nucleons in the nucleus, and check if nucleons are participants
   for (const auto& nucleon : nucleus) {
-    //if (!nucleon.is_participant())
-    //  continue;
+    if (!nucleon.is_participant())
+      continue;
 
     npart_++;
 
-    // Get nucleon subgrid boundary {xmin, xmax, ymin, ymax}.
+    // Get nucleon subgrid boundary {xmin, xmax, ymin, ymax}. NucleonCommon is defined in nucleon.h, where its method boundary is defined
     const auto boundary = nucleon_common.boundary(nucleon);
 
     // Determine min & max indices of nucleon subgrid.
@@ -203,12 +202,12 @@ void Event::compute_reduced_thickness(GenMean gen_mean) {
       sum += t;
       // Center of mass grid indices.
       // No need to multiply by dxy since it would be canceled later.
-      ixcm += t * static_cast<double>(ix);
+      ixcm += t * static_cast<double>(ix); //ixcm is converted by static_cast in a double
       iycm += t * static_cast<double>(iy);
     }
   }
 
-  multiplicity_ = dxy_ * dxy_ * sum;
+  multiplicity_ = dxy_ * dxy_ * sum; //integral of TR_, which gives us the integral of the entropy density == multiplicity 
   ixcm_ = ixcm / sum;
   iycm_ = iycm / sum;
 }
