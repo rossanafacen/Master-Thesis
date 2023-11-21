@@ -16,6 +16,7 @@
 
 #include "fwd_decl.h"
 #include "eos.h"
+#include "nucleon.h"
 
 namespace trento {
 
@@ -88,7 +89,7 @@ class Event {
   { return TAB_; }
 
   void clear_TAB(void);
-  void accumulate_TAB(Nucleon& A, Nucleon& B, NucleonProfile& profile);
+  void accumulate_TAB(NucleonData& A, NucleonData& B, NucleonCommon& nucleon_common);
 
 
   const bool& with_ncoll() const

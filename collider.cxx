@@ -145,7 +145,7 @@ double Collider::sample_collision() {
           // contribute independently its Tpp. Therefore, if one pair collide, 
           // it calls the event object to accumulate Tpp to the Ncoll density
           // Ncoll density = Sum Tpp		
-          if (new_collision) event_.accumulate_TAB(A, B, nucleon_profile_);
+          if (new_collision) event_.accumulate_TAB(A, B, nucleon_common_);
           //if (new_collision) event_.compute_ncoll();
         }
         

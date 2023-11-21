@@ -112,6 +112,57 @@ inline const T& clip(const T& value, const T& min, const T& max) {
 
 }  // unnamed namespace
 
+void Event::clear_TAB(void){
+  ncoll_ = 0;
+  for (int iy = 0; iy < nsteps_; ++iy) {
+    for (int ix = 0; ix < nsteps_; ++ix) {
+      TAB_[iy][ix] = 0.;
+    }
+  }
+}
+
+// WK: accumulate a Tpp to Ncoll density table
+void Event::accumulate_TAB(NucleonData& A, NucleonData& B, NucleonCommon& nucleon_common){
+  ncoll_ ++;
+
+	// the loaction of A and B nucleon
+	double xA = A.x() + xymax_, yA = A.y() + xymax_;
+	double xB = B.x() + xymax_, yB = B.y() + xymax_;
+	// impact parameter squared of this binary collision
+	double bpp_sq = std::pow(xA - xB, 2) + std::pow(yA - yB, 2);
+	// the mid point of A and B
+	double x = (xA+xB)/2.;
+  double y = (yA+yB)/2.;
+	// the max radius of Tpp 
+	// Get nucleon subgrid boundary {xmin, xmax, ymin, ymax}. NucleonCommon is defined in nucleon.h, where its method boundary is defined
+  const auto boundary = nucleon_common.boundary(A);
+
+  // Determine min & max indices of nucleon subgrid, in terms of dxy and not of distances
+  int ixmin = clip(static_cast<int>((boundary[0]+xymax_)/dxy_), 0, nsteps_-1);
+  int ixmax = clip(static_cast<int>((boundary[1]+xymax_)/dxy_), 0, nsteps_-1);
+  int iymin = clip(static_cast<int>((boundary[2]+xymax_)/dxy_), 0, nsteps_-1);
+  int iymax = clip(static_cast<int>((boundary[3]+xymax_)/dxy_), 0, nsteps_-1);
+  
+    // Add Tpp to Ncoll density.
+	  for (auto iy = iymin; iy <= iymax; ++iy) {
+      double dysqA = std::pow(yA - (static_cast<double>(iy)+.5)*dxy_, 2);
+	    double dysqB = std::pow(yB - (static_cast<double>(iy)+.5)*dxy_, 2);
+      
+      for (auto ix = ixmin; ix <= ixmax; ++ix) {
+        double dxsqA = std::pow(xA - (static_cast<double>(ix)+.5)*dxy_, 2);
+		    double dxsqB = std::pow(xB - (static_cast<double>(ix)+.5)*dxy_, 2);
+        // The Ncoll density does not fluctuates, so we use the 
+        // deterministic_thickness function
+        // where the Gamma fluctuation are turned off.
+        // since this binary collision already happened, the binary collision
+        // density should be normalized to one.
+          TAB_[iy][ix] += nucleon_common.deterministic_thickness(dxsqA + dysqA)
+                * nucleon_common.deterministic_thickness(dxsqB + dysqB);
+      }
+    }
+}
+
+
 void Event::compute_nuclear_thickness(
     const Nucleus& nucleus, const NucleonCommon& nucleon_common, Grid& TX) {
   // Construct the thickness grid by looping over participants and adding each
@@ -178,9 +229,10 @@ void Event::compute_nuclear_deterministic_thickness(
     // Add profile to grid. 
     for (auto iy = iymin; iy <= iymax; ++iy) {
       for (auto ix = ixmin; ix <= ixmax; ++ix) {
-        TX[iy][ix] += nucleon_common.deterministic_thickness(
-          nucleon, (ix+.5)*dxy_ - xymax_, (iy+.5)*dxy_ - xymax_
-        );
+        //TX[iy][ix] += nucleon_common.deterministic_thickness(
+        //  nucleon, (ix+.5)*dxy_ - xymax_, (iy+.5)*dxy_ - xymax_
+        //);
+        TX[iy][ix] = 1;
       }
     }
   }
@@ -222,7 +274,7 @@ void Event::compute_ncoll() {
     for (int ix = 0; ix < nsteps_; ++ix) {
       auto t = norm_ * TA_det_[iy][ix] * TB_det_[iy][ix];
       
-      //auto t = norm_ * TA_det_[iy][ix];
+      
 
       TAB_[iy][ix] = t;
       sum += t;
