@@ -87,9 +87,14 @@ class Event {
   const Grid& ncoll_grid() const
   { return TAB_; }
 
+  const bool& with_ncoll() const
+  { return with_ncoll_; }
+
   ///compute the binary collision. ADDED BY ME
   void compute_ncoll();
   
+    const int& ncoll() const
+  { return ncoll_; }
 
  private:
   /// Compute a nuclear thickness function (TA or TB) onto a grid for a given
@@ -150,6 +155,11 @@ class Event {
 
   /// Tab integrated
   double Tab_integr_;
+
+  /// WK: Number of binary collisions.
+  int ncoll_;
+
+  bool with_ncoll_;
 
 };
 

@@ -60,6 +60,7 @@ Event::Event(const VarMap& var_map)
       TB_det_(boost::extents[nsteps_][nsteps_]),
       TR_(boost::extents[nsteps_][nsteps_]),
       TAB_(boost::extents[nsteps_][nsteps_]),
+      with_ncoll_(var_map["ncoll"].as<bool>()),
       EOS_() {
   // Choose which version of the generalized mean to use based on the
   // configuration.  The possibilities are defined above.  See the header for
@@ -87,6 +88,7 @@ void Event::compute(const Nucleus& nucleusA, const Nucleus& nucleusB,
                     const NucleonCommon& nucleon_common) {
   // Reset npart; compute_nuclear_thickness() increments it.
   npart_ = 0;
+  ncoll_ = 0;
   compute_nuclear_thickness(nucleusA, nucleon_common, TA_);
   compute_nuclear_thickness(nucleusB, nucleon_common, TB_);
   compute_reduced_thickness_();
@@ -215,6 +217,7 @@ void Event::compute_reduced_thickness(GenMean gen_mean) {
 
 //added by me
 void Event::compute_ncoll() {
+  ncoll_ ++;
   double sum = 0.;
   for (int iy = 0; iy < nsteps_; ++iy) {
     for (int ix = 0; ix < nsteps_; ++ix) {

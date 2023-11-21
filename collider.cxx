@@ -70,7 +70,7 @@ Collider::Collider(const VarMap& var_map)
       nucleusB_(create_nucleus(var_map, 1)),
       nucleon_common_(var_map),
       nevents_(var_map["number-events"].as<int>()),
-      calc_ncoll_(var_map["ncoll"].as<bool>()),
+      with_ncoll_(var_map["ncoll"].as<bool>()),
       bmin_(var_map["b-min"].as<double>()),
       bmax_(determine_bmax(var_map, *nucleusA_, *nucleusB_, nucleon_common_)),
       centmin_(var_map["cent-min"].as<double>()),
@@ -93,9 +93,10 @@ void Collider::run_events() {
   for (int n = 0; n < nevents_; ++n) {
     // Sampling the impact parameter also implicitly prepares the nuclei for
     // event computation, i.e. by sampling nucleon positions and participants.
-    auto collision_attr = sample_collision();
-    double b = std::get<0>(collision_attr);
-    int ncoll = std::get<1>(collision_attr);
+    //auto collision_attr = sample_collision();
+    //double b = std::get<0>(collision_attr);
+    double b = sample_collision();
+    //int ncoll = std::get<1>(collision_attr);
 
     // Pass the prepared nuclei to the Event.  It computes the entropy profile
     // (thickness grid) and other event observables.
@@ -103,7 +104,7 @@ void Collider::run_events() {
  //Check if even is in a given centrality class
     if ( event_.multiplicity() < centmax_ && centmin_ <= event_.multiplicity()){
     // Write event data.
-    output_(n, b, ncoll, event_);
+    output_(n, b, event_);
     }
     else{
         --n;
@@ -111,7 +112,8 @@ void Collider::run_events() {
   }
 }
 
-std::tuple<double, int> Collider::sample_collision() {
+//std::tuple<double, int> Collider::sample_collision() {
+double Collider::sample_collision() {
   // Sample impact parameters until at least one nucleon-nucleon pair
   // participates.  The bool 'collision' keeps track -- it is effectively a
   // logical OR over all possible participant pairs.
@@ -137,13 +139,19 @@ std::tuple<double, int> Collider::sample_collision() {
     for (auto&& A : *nucleusA_) {
       for (auto&& B : *nucleusB_) {
         auto new_collision = nucleon_common_.participate(A, B);
-        if (new_collision && calc_ncoll_) ++ncoll;
+        if (with_ncoll_) {
+        
+          if (new_collision) event_.compute_ncoll();
+        }
+        
+        
         collision = new_collision || collision;
       }
     }
   } while (!collision);
 
-  return std::make_tuple(b, ncoll);
+  //return std::make_tuple(b, ncoll);
+  return b;
 }
 
 }  // namespace trento
