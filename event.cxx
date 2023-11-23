@@ -154,16 +154,15 @@ void Event::accumulate_TAB(NucleonData& A, NucleonData& B, NucleonCommon& nucleo
 
   
     for (auto iy = iymin; iy <= iymax; ++iy) {
-      double y_nucleus = (static_cast<double>(iy)+.5)*dxy_;
+      //double y_nucleus = (static_cast<double>(iy)+.5)*dxy_;
 	    
       for (auto ix = ixmin; ix <= ixmax; ++ix) {
-        double x_nucleus = (static_cast<double>(ix)+.5)*dxy_;
+        //double x_nucleus = (static_cast<double>(ix)+.5)*dxy_;
 	      //TAB_[iy][ix] += nucleon_common.deterministic_thickness(A, (ix+.5)*dxy_ - xymax_, (iy+.5)*dxy_ - xymax_)
                //* nucleon_common.deterministic_thickness(B, x_nucleus, y_nucleus);
         
-        TAB_[iy][ix] += nucleon_common.deterministic_thickness(
-          A, (ix+.5)*dxy_ - xymax_, (iy+.5)*dxy_ - xymax_) * nucleon_common.deterministic_thickness(
-          B, (ix+.5)*dxy_ - xymax_, (iy+.5)*dxy_ - xymax_);
+        TAB_[iy][ix] += nucleon_common.deterministic_thickness(A, (ix+.5)*dxy_ - xymax_, (iy+.5)*dxy_ - xymax_) 
+        * nucleon_common.deterministic_thickness(B, (ix+.5)*dxy_ - xymax_, (iy+.5)*dxy_ - xymax_);
         //TAB_[iy][ix] += 1;
       }
     }
@@ -209,7 +208,7 @@ void Event::compute_nuclear_thickness(
   }
 }
 
-/*void Event::compute_nuclear_deterministic_thickness(
+void Event::compute_nuclear_deterministic_thickness(
     const Nucleus& nucleus, const NucleonCommon& nucleon_common, Grid& TX) {
    std::fill(TX.origin(), TX.origin() + TX.num_elements(), 0.); 
 
@@ -228,14 +227,14 @@ void Event::compute_nuclear_thickness(
     // Add profile to grid. 
     for (auto iy = iymin; iy <= iymax; ++iy) {
       for (auto ix = ixmin; ix <= ixmax; ++ix) {
-        //TX[iy][ix] += nucleon_common.deterministic_thickness(
-        //  nucleon, (ix+.5)*dxy_ - xymax_, (iy+.5)*dxy_ - xymax_
-        //);
-        TX[iy][ix] = 1;
+        TX[iy][ix] += nucleon_common.deterministic_thickness(
+          nucleon, (ix+.5)*dxy_ - xymax_, (iy+.5)*dxy_ - xymax_
+        );
+        //TX[iy][ix] = 1;
       }
     }
   }
-}*/
+}
 
 
 
@@ -271,7 +270,7 @@ void Event::compute_ncoll() {
   double sum = 0.;
   for (int iy = 0; iy < nsteps_; ++iy) {
     for (int ix = 0; ix < nsteps_; ++ix) {
-      //auto t = norm_ * TA_det_[iy][ix] * TB_det_[iy][ix];
+      auto t = norm_ * TA_det_[iy][ix] * TB_det_[iy][ix];
 
       TAB_[iy][ix] += 1;
       sum += 1;
