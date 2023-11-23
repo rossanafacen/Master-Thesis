@@ -91,9 +91,10 @@ void Event::compute(const Nucleus& nucleusA, const Nucleus& nucleusB,
   compute_nuclear_thickness(nucleusA, nucleon_common, TA_);
   compute_nuclear_thickness(nucleusB, nucleon_common, TB_);
   compute_reduced_thickness_();
-  compute_nuclear_deterministic_thickness(nucleusA, nucleon_common, TA_det_);
-  compute_nuclear_deterministic_thickness(nucleusB, nucleon_common, TB_det_);
-  compute_ncoll();
+  //compute_nuclear_deterministic_thickness(nucleusA, nucleon_common, TA_det_);
+  //compute_nuclear_deterministic_thickness(nucleusB, nucleon_common, TB_det_);
+  //compute_ncoll();
+  //accumulate_TAB(nucleusA, nucleusB, nucleon_common);
   compute_observables();
 }
 
@@ -121,6 +122,8 @@ void Event::clear_TAB(void){
   }
 }
 
+
+
 // WK: accumulate a Tpp to Ncoll density table
 void Event::accumulate_TAB(NucleonData& A, NucleonData& B, NucleonCommon& nucleon_common){
   ncoll_ ++;
@@ -128,36 +131,40 @@ void Event::accumulate_TAB(NucleonData& A, NucleonData& B, NucleonCommon& nucleo
 	// the loaction of A and B nucleon
 	double xA = A.x() + xymax_, yA = A.y() + xymax_;
 	double xB = B.x() + xymax_, yB = B.y() + xymax_;
-	// impact parameter squared of this binary collision
-	double bpp_sq = std::pow(xA - xB, 2) + std::pow(yA - yB, 2);
 	// the mid point of A and B
 	double x = (xA+xB)/2.;
   double y = (yA+yB)/2.;
-	// the max radius of Tpp 
-	// Get nucleon subgrid boundary {xmin, xmax, ymin, ymax}. NucleonCommon is defined in nucleon.h, where its method boundary is defined
-  const auto boundary = nucleon_common.boundary(A);
-
-  // Determine min & max indices of nucleon subgrid, in terms of dxy and not of distances
-  int ixmin = clip(static_cast<int>((boundary[0]+xymax_)/dxy_), 0, nsteps_-1);
-  int ixmax = clip(static_cast<int>((boundary[1]+xymax_)/dxy_), 0, nsteps_-1);
-  int iymin = clip(static_cast<int>((boundary[2]+xymax_)/dxy_), 0, nsteps_-1);
-  int iymax = clip(static_cast<int>((boundary[3]+xymax_)/dxy_), 0, nsteps_-1);
+	
+  const auto boundaryA = nucleon_common.boundary(A);
+  const auto boundaryB = nucleon_common.boundary(B);
   
-    // Add Tpp to Ncoll density.
-	  for (auto iy = iymin; iy <= iymax; ++iy) {
-      double dysqA = std::pow(yA - (static_cast<double>(iy)+.5)*dxy_, 2);
-	    double dysqB = std::pow(yB - (static_cast<double>(iy)+.5)*dxy_, 2);
-      
+
+  // Determine min & max indices of nucleon subgrid.
+  int ixmin = clip(static_cast<int>((std::min(boundaryA[0], boundaryB[0]) +xymax_)/dxy_), 0, nsteps_-1);
+  int ixmax = clip(static_cast<int>((std::max(boundaryA[1], boundaryB[1]) +xymax_)/dxy_), 0, nsteps_-1);
+  int iymin = clip(static_cast<int>((std::min(boundaryA[2], boundaryB[2]) +xymax_)/dxy_), 0, nsteps_-1);
+  int iymax = clip(static_cast<int>((std::max(boundaryA[3], boundaryB[3]) +xymax_)/dxy_), 0, nsteps_-1);
+
+  //this is only useful to define the boundaries of each grid
+  /*const double r = nucleon_common.max_impact();
+	int ixmin = clip(static_cast<int>((x-r)/dxy_), 0, nsteps_-1);
+  int iymin = clip(static_cast<int>((y-r)/dxy_), 0, nsteps_-1);
+  int ixmax = clip(static_cast<int>((x+r)/dxy_), 0, nsteps_-1);
+  int iymax = clip(static_cast<int>((y+r)/dxy_), 0, nsteps_-1);*/
+
+  
+    for (auto iy = iymin; iy <= iymax; ++iy) {
+      double y_nucleus = (static_cast<double>(iy)+.5)*dxy_;
+	    
       for (auto ix = ixmin; ix <= ixmax; ++ix) {
-        double dxsqA = std::pow(xA - (static_cast<double>(ix)+.5)*dxy_, 2);
-		    double dxsqB = std::pow(xB - (static_cast<double>(ix)+.5)*dxy_, 2);
-        // The Ncoll density does not fluctuates, so we use the 
-        // deterministic_thickness function
-        // where the Gamma fluctuation are turned off.
-        // since this binary collision already happened, the binary collision
-        // density should be normalized to one.
-          TAB_[iy][ix] += nucleon_common.deterministic_thickness(dxsqA + dysqA)
-                * nucleon_common.deterministic_thickness(dxsqB + dysqB);
+        double x_nucleus = (static_cast<double>(ix)+.5)*dxy_;
+	      //TAB_[iy][ix] += nucleon_common.deterministic_thickness(A, (ix+.5)*dxy_ - xymax_, (iy+.5)*dxy_ - xymax_)
+               //* nucleon_common.deterministic_thickness(B, x_nucleus, y_nucleus);
+        
+        TAB_[iy][ix] += nucleon_common.deterministic_thickness(
+          A, (ix+.5)*dxy_ - xymax_, (iy+.5)*dxy_ - xymax_) * nucleon_common.deterministic_thickness(
+          B, (ix+.5)*dxy_ - xymax_, (iy+.5)*dxy_ - xymax_);
+        //TAB_[iy][ix] += 1;
       }
     }
 }
@@ -180,7 +187,7 @@ void Event::compute_nuclear_thickness(
     if (!nucleon.is_participant())
       continue;
 
-    npart_++;
+    ++npart_;
 
     // Get nucleon subgrid boundary {xmin, xmax, ymin, ymax}. NucleonCommon is defined in nucleon.h, where its method boundary is defined
     const auto boundary = nucleon_common.boundary(nucleon);
@@ -202,17 +209,9 @@ void Event::compute_nuclear_thickness(
   }
 }
 
-void Event::compute_nuclear_deterministic_thickness(
+/*void Event::compute_nuclear_deterministic_thickness(
     const Nucleus& nucleus, const NucleonCommon& nucleon_common, Grid& TX) {
-  // Construct the thickness grid by looping over participants and adding each
-  // to a small subgrid within its radius.  Compared to the other possibility
-  // (grid cells as the outer loop and participants as the inner loop), this
-  // reduces the number of required distance-squared calculations by a factor of
-  // ~20 (depending on the nucleon size).  The Event unit test verifies that the
-  // two methods agree.
-  
-  // Wipe grid with zeros.
-  std::fill(TX.origin(), TX.origin() + TX.num_elements(), 0.); 
+   std::fill(TX.origin(), TX.origin() + TX.num_elements(), 0.); 
 
   // Deposit each participant onto the grid. Loop over nucleons in the nucleus, and check if nucleons are participants
   for (const auto& nucleon : nucleus) {
@@ -236,7 +235,7 @@ void Event::compute_nuclear_deterministic_thickness(
       }
     }
   }
-}
+}*/
 
 
 
@@ -272,12 +271,10 @@ void Event::compute_ncoll() {
   double sum = 0.;
   for (int iy = 0; iy < nsteps_; ++iy) {
     for (int ix = 0; ix < nsteps_; ++ix) {
-      auto t = norm_ * TA_det_[iy][ix] * TB_det_[iy][ix];
-      
-      
+      //auto t = norm_ * TA_det_[iy][ix] * TB_det_[iy][ix];
 
-      TAB_[iy][ix] = t;
-      sum += t;
+      TAB_[iy][ix] += 1;
+      sum += 1;
     }
   }
   Tab_integr_ = dxy_ * dxy_ * sum; //integral of Tab 

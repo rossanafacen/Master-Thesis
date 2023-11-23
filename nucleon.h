@@ -83,7 +83,8 @@ class NucleonCommon {
   /// Instantiate from the configuration.
   explicit NucleonCommon(const VarMap& var_map);
 
-  /// The maximum impact parameter for participation.
+
+  /// The maximum impact parameter for participation (correspondent to "radius" in trento 3d)
   double max_impact() const;
 
   /// Corners of the tile enclosing the nucleon thickness.
@@ -93,9 +94,9 @@ class NucleonCommon {
   double thickness(const NucleonData& nucleon, double x, double y) const;
 
   /// Nucleon deterministic thickness as a function of transverse position.
-  //double deterministic_thickness(const NucleonData& nucleon, double x, double y) const;
-  double deterministic_thickness(double distance_sq) const;
-
+  double deterministic_thickness(const NucleonData& nucleon, double x, double y) const;
+  //double deterministic_thickness(double distance_sq) const;
+ 
   /// Randomly determine if a pair of nucleons participates.
   bool participate(NucleonData& A, NucleonData& B) const;
 
@@ -188,7 +189,6 @@ inline bool NucleonData::constituents_exist() const {
 }
 
 // NucleonCommon inline member functions
-
 inline double NucleonCommon::max_impact() const {
   return std::sqrt(max_impact_sq_);
 }
@@ -239,20 +239,20 @@ inline double NucleonCommon::thickness(
 }
 
 
-/*inline double NucleonCommon::deterministic_thickness(
+inline double NucleonCommon::deterministic_thickness(
     const NucleonData& nucleon, double x, double y) const {
   auto t = 0.;
   
   for (const auto& constituent : nucleon.constituents_) {
     auto distance_sq = sqr(x - constituent.x) + sqr(y - constituent.y);
     if (distance_sq < constituent_radius_sq_)
-      t += fast_exp_(-.5*distance_sq/constituent_width_sq_); 
+      t += fast_exp_(-.5*distance_sq/constituent_width_sq_); //I am summing for the constituents
   }
 
   return prefactor_ * t; //this thickness doesn t have the fluctuation
-}*/
+}
 
-inline double NucleonCommon::deterministic_thickness(double distance_sq) const {
+/*inline double NucleonCommon::deterministic_thickness(double distance_sq) const {
   //auto t = 0.;
   
   //for (const auto& constituent : nucleon.constituents_) {
@@ -263,7 +263,7 @@ inline double NucleonCommon::deterministic_thickness(double distance_sq) const {
     return 0;
   }
   //return prefactor_ * t; //this thickness doesn t have the fluctuation
-}
+}*/
 
 inline bool NucleonCommon::participate(NucleonData& A, NucleonData& B) const {
   // If both nucleons are already participants, there's nothing to do.
@@ -274,8 +274,8 @@ inline bool NucleonCommon::participate(NucleonData& A, NucleonData& B) const {
 
   // Check if nucleons are out of range.
   if (distance_sq > max_impact_sq_){
-    sample_constituent_positions(A); //need to sample the non-constituents as well sometimes
-    sample_constituent_positions(B);
+    //sample_constituent_positions(A); //need to sample the non-constituents as well sometimes
+    //sample_constituent_positions(B);
     return false;
   }
   sample_constituent_positions(A);

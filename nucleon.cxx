@@ -246,14 +246,18 @@ double partonic_cross_section(const VarMap& var_map) {
 }  // unnamed namespace
 
 NucleonCommon::NucleonCommon(const VarMap& var_map)
-    : fast_exp_(-.5*sqr(max_radius_widths), 0., 1000),
-      nucleon_width_(var_map["nucleon-width"].as<double>()),
+    : nucleon_width_(var_map["nucleon-width"].as<double>()),
+      //max_impact_widths = 6.
+      max_impact_sq_(sqr(max_impact_widths*nucleon_width_)),
+
       constituent_width_(var_map["constit-width"].as<double>()),
+      //max_radius_widths = 5.
+      constituent_radius_sq_(sqr(max_radius_widths*constituent_width_)),    
+
+      fast_exp_(-.5*sqr(max_radius_widths), 0., 1000),
       constituent_number_(std::size_t(var_map["constit-number"].as<int>())),
       sampling_width_(calc_sampling_width(var_map)),
-      max_impact_sq_(sqr(max_impact_widths*nucleon_width_)),
       constituent_width_sq_(sqr(constituent_width_)),
-      constituent_radius_sq_(sqr(max_radius_widths*constituent_width_)),
       sigma_partonic_(partonic_cross_section(var_map)),
       prefactor_(math::double_constants::one_div_two_pi/constituent_width_sq_/constituent_number_),
       calc_ncoll_(var_map["ncoll"].as<bool>()),

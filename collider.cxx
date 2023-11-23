@@ -138,13 +138,15 @@ double Collider::sample_collision() {
     // Check each nucleon-nucleon pair.
     for (auto&& A : *nucleusA_) {
       for (auto&& B : *nucleusB_) {
-        auto new_collision = nucleon_common_.participate(A, B);
+        bool new_collision = nucleon_common_.participate(A, B);
+        //bool new_collision = true;
         if (with_ncoll_) {
           if (new_collision && (!collision) ) event_.clear_TAB();
           // WK: to calculate binary collision denstiy, each collision 
           // contribute independently its Tpp. Therefore, if one pair collide, 
           // it calls the event object to accumulate Tpp to the Ncoll density
-          // Ncoll density = Sum Tpp		
+          // Ncoll dens
+          //ity = Sum Tpp		
           if (new_collision) event_.accumulate_TAB(A, B, nucleon_common_);
           //if (new_collision) event_.compute_ncoll();
         }
