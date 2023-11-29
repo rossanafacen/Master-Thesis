@@ -193,6 +193,7 @@ inline double NucleonCommon::max_impact() const {
   return std::sqrt(max_impact_sq_);
 }
 
+
 inline std::array<double, 4>
 NucleonCommon::boundary(const NucleonData& nucleon) const {
   auto constituent = nucleon.constituents_.begin();
@@ -284,7 +285,8 @@ inline bool NucleonCommon::participate(NucleonData& A, NucleonData& B) const {
   auto overlap = 0.;
   for (const auto& qA : A.constituents_) {
     for (const auto& qB : B.constituents_) {
-      auto distance_sq = sqr(qA.x - qB.x) + sqr(qA.y - qB.y);
+      auto distance_sq = sqr(qA.x
+       - qB.x) + sqr(qA.y - qB.y);
       overlap += std::exp(-.25*distance_sq/constituent_width_sq_);
     }
   }

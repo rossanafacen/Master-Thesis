@@ -91,10 +91,9 @@ void Event::compute(const Nucleus& nucleusA, const Nucleus& nucleusB,
   compute_nuclear_thickness(nucleusA, nucleon_common, TA_);
   compute_nuclear_thickness(nucleusB, nucleon_common, TB_);
   compute_reduced_thickness_();
-  //compute_nuclear_deterministic_thickness(nucleusA, nucleon_common, TA_det_);
-  //compute_nuclear_deterministic_thickness(nucleusB, nucleon_common, TB_det_);
-  //compute_ncoll();
-  //accumulate_TAB(nucleusA, nucleusB, nucleon_common);
+  compute_nuclear_deterministic_thickness(nucleusA, nucleon_common, TA_det_);
+  compute_nuclear_deterministic_thickness(nucleusB, nucleon_common, TB_det_);
+  compute_ncoll();
   compute_observables();
 }
 
@@ -125,10 +124,11 @@ void Event::clear_TAB(void){
 
 
 // WK: accumulate a Tpp to Ncoll density table
-void Event::accumulate_TAB(NucleonData& A, NucleonData& B, NucleonCommon& nucleon_common){
+//void Event::accumulate_TAB(NucleonData& A, NucleonData& B, NucleonCommon& nucleon_common){
+void Event::accumulate_TAB(NucleonData& A, NucleonData& B, NucleonCommon& nucleon_common, double b){  
   ncoll_ ++;
 
-	// the loaction of A and B nucleon
+	// the location of A and B nucleon
 	double xA = A.x() + xymax_, yA = A.y() + xymax_;
 	double xB = B.x() + xymax_, yB = B.y() + xymax_;
 	// the mid point of A and B
@@ -138,19 +138,20 @@ void Event::accumulate_TAB(NucleonData& A, NucleonData& B, NucleonCommon& nucleo
   const auto boundaryA = nucleon_common.boundary(A);
   const auto boundaryB = nucleon_common.boundary(B);
   
-
-  // Determine min & max indices of nucleon subgrid.
-  int ixmin = clip(static_cast<int>((std::min(boundaryA[0], boundaryB[0]) +xymax_)/dxy_), 0, nsteps_-1);
+  // Determine min & max indices of nucleon subgrid. 
+  //Sum for xymax to change the reference frame. All the coordinates are calculated wrt center of the grid (which has coordinates xymax, xymax), but for ixmin etc we need positive values, so we change coordinate system
+  //and shift everything to the system with the center in the lower left point of the grid. When we will use the funciton deterministic_thickness, we will need to reshift everything wrt xymax 
+  /*int ixmin = clip(static_cast<int>((std::min(boundaryA[0], boundaryB[0]) +xymax_)/dxy_), 0, nsteps_-1);
   int ixmax = clip(static_cast<int>((std::max(boundaryA[1], boundaryB[1]) +xymax_)/dxy_), 0, nsteps_-1);
   int iymin = clip(static_cast<int>((std::min(boundaryA[2], boundaryB[2]) +xymax_)/dxy_), 0, nsteps_-1);
-  int iymax = clip(static_cast<int>((std::max(boundaryA[3], boundaryB[3]) +xymax_)/dxy_), 0, nsteps_-1);
+  int iymax = clip(static_cast<int>((std::max(boundaryA[3], boundaryB[3]) +xymax_)/dxy_), 0, nsteps_-1);*/
 
   //this is only useful to define the boundaries of each grid
-  /*const double r = nucleon_common.max_impact();
+  const double r = nucleon_common.max_impact();
 	int ixmin = clip(static_cast<int>((x-r)/dxy_), 0, nsteps_-1);
   int iymin = clip(static_cast<int>((y-r)/dxy_), 0, nsteps_-1);
   int ixmax = clip(static_cast<int>((x+r)/dxy_), 0, nsteps_-1);
-  int iymax = clip(static_cast<int>((y+r)/dxy_), 0, nsteps_-1);*/
+  int iymax = clip(static_cast<int>((y+r)/dxy_), 0, nsteps_-1);
 
   
     for (auto iy = iymin; iy <= iymax; ++iy) {
@@ -272,7 +273,7 @@ void Event::compute_ncoll() {
     for (int ix = 0; ix < nsteps_; ++ix) {
       auto t = norm_ * TA_det_[iy][ix] * TB_det_[iy][ix];
 
-      TAB_[iy][ix] += 1;
+      TAB_[iy][ix] += t;
       sum += 1;
     }
   }

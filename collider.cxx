@@ -125,7 +125,7 @@ double Collider::sample_collision() {
   do {
     // Sample b from P(b)db = 2*pi*b.
     b = bmin_ + (bmax_ - bmin_) * std::sqrt(random::canonical<double>());
-
+    //b = 0;
     // Offset each nucleus depending on the asymmetry parameter (see header).
     nucleusA_->sample_nucleons(asymmetry_ * b);
     THETA_A = THETA;
@@ -147,7 +147,7 @@ double Collider::sample_collision() {
           // it calls the event object to accumulate Tpp to the Ncoll density
           // Ncoll dens
           //ity = Sum Tpp		
-          if (new_collision) event_.accumulate_TAB(A, B, nucleon_common_);
+          if (new_collision) event_.accumulate_TAB(A, B, nucleon_common_, b);
           //if (new_collision) event_.compute_ncoll();
         }
         

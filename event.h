@@ -89,7 +89,7 @@ class Event {
   { return TAB_; }
 
   void clear_TAB(void);
-  void accumulate_TAB(NucleonData& A, NucleonData& B, NucleonCommon& nucleon_common);
+  void accumulate_TAB(NucleonData& A, NucleonData& B, NucleonCommon& nucleon_common, double b);
 
 
   const bool& with_ncoll() const
