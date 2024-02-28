@@ -3,9 +3,10 @@
 // MIT License
 
 #include "hdf5_utils.h"
-
+#include <algorithm>
 #include <stdexcept>
-
+#include <string>
+#include <vector>
 #include <boost/filesystem.hpp>
 
 namespace trento {

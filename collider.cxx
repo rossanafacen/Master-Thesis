@@ -147,8 +147,9 @@ double Collider::sample_collision() {
           // it calls the event object to accumulate Tpp to the Ncoll density
           // Ncoll dens
           //ity = Sum Tpp		
-          if (new_collision) event_.accumulate_TAB(A, B, nucleon_common_, b);
-          //if (new_collision) event_.compute_ncoll();
+          //if (new_collision) event_.accumulate_TAB(A, B, nucleon_common_, b);
+          //if (new_collision) //ncoll_ ++;
+          event_.accumulate_TAB(A, B, nucleon_common_, b);
         }
         
         

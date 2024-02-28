@@ -91,9 +91,9 @@ void Event::compute(const Nucleus& nucleusA, const Nucleus& nucleusB,
   compute_nuclear_thickness(nucleusA, nucleon_common, TA_);
   compute_nuclear_thickness(nucleusB, nucleon_common, TB_);
   compute_reduced_thickness_();
-  compute_nuclear_deterministic_thickness(nucleusA, nucleon_common, TA_det_);
-  compute_nuclear_deterministic_thickness(nucleusB, nucleon_common, TB_det_);
-  compute_ncoll();
+  //compute_nuclear_deterministic_thickness(A, nucleon_common, TA_det_);
+  //compute_nuclear_deterministic_thickness(B, nucleon_common, TB_det_);
+  //compute_ncoll();
   compute_observables();
 }
 
@@ -211,7 +211,7 @@ void Event::compute_nuclear_thickness(
 
 void Event::compute_nuclear_deterministic_thickness(
     const Nucleus& nucleus, const NucleonCommon& nucleon_common, Grid& TX) {
-   std::fill(TX.origin(), TX.origin() + TX.num_elements(), 0.); 
+   //std::fill(TX.origin(), TX.origin() + TX.num_elements(), 0.); 
 
   // Deposit each participant onto the grid. Loop over nucleons in the nucleus, and check if nucleons are participants
   for (const auto& nucleon : nucleus) {
@@ -240,6 +240,7 @@ void Event::compute_nuclear_deterministic_thickness(
 
 
 
+
 template <typename GenMean>
 void Event::compute_reduced_thickness(GenMean gen_mean) {
   double sum = 0.;
@@ -264,7 +265,6 @@ void Event::compute_reduced_thickness(GenMean gen_mean) {
 }
 
 
-
 //added by me
 void Event::compute_ncoll() {
   ncoll_ ++;
@@ -273,8 +273,8 @@ void Event::compute_ncoll() {
     for (int ix = 0; ix < nsteps_; ++ix) {
       auto t = norm_ * TA_det_[iy][ix] * TB_det_[iy][ix];
 
-      TAB_[iy][ix] += t;
-      sum += 1;
+      TAB_[iy][ix] = t;
+      sum += t;
     }
   }
   Tab_integr_ = dxy_ * dxy_ * sum; //integral of Tab 

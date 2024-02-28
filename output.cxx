@@ -133,7 +133,7 @@ void HDF5Writer::operator()(int num, double impact_param,
   // The dataset name is a prefix plus the event number.
   const std::string gp_name{"/event_" + std::to_string(num)};
   const std::string entr_name{gp_name + "/entropy_density"};
-  const std::string ncoll_name{gp_name + "/Ncoll_density"};
+  //const std::string ncoll_name{gp_name + "/Ncoll_density"};
 
   
   auto dataset = H5::Group(file_.createGroup(gp_name));
@@ -177,8 +177,8 @@ void HDF5Writer::operator()(int num, double impact_param,
 
 
   // Create the new dataset and write the ncoll gid
-  auto dataset2 = file_.createDataSet(ncoll_name, datatype2, dataspace2, proplist2);
-  dataset2.write(grid2.data(), datatype2);
+  //auto dataset2 = file_.createDataSet(ncoll_name, datatype2, dataspace2, proplist2);
+  //dataset2.write(grid2.data(), datatype2);
   
   
 }
